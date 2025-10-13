@@ -19,7 +19,7 @@ license.text = "MIT"
 readme = "README.md"
 
 [project.urls]
-Homepage = "https://github.com/million-mo/arkts_language_server"
+Homepage = "https://github.com/Million-mo/tree-sitter-arkts"
 
 [project.optional-dependencies]
 core = ["tree-sitter~=0.24"]
