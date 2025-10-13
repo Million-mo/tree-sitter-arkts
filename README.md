@@ -84,8 +84,8 @@ print(tree.root_node)
 ```arkts
 @Component
 struct MyComponent {
-  @State count: number = 0
-  @Prop title: string = 'Default'
+  @State count: number = 0;
+  @Prop title: string = 'Default';
   
   build() {
     Column() {
@@ -103,8 +103,8 @@ struct MyComponent {
 ```arkts
 @Component
 struct StateExample {
-  @State private items: string[] = []
-  @Link shared: boolean
+  @State private items: string[] = [];
+  @Link shared: boolean;
   
   build() {
     List() {

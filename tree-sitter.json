@@ -23,7 +23,7 @@
       }
     ],
     "links": {
-      "repository": "https://github.com/Million-mo/arkts_language_server"
+      "repository": "https://github.com/Million-mo/tree-sitter-arkts"
     }
   },
   "bindings": {
