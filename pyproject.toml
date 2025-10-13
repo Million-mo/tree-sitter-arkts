@@ -3,23 +3,32 @@ requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "tree-sitter-arkts"
-description = "paser for arkts"
-version = "0.1.0"
-keywords = ["incremental", "parsing", "tree-sitter", "arkts"]
+name = "tree-sitter-arkts-open"
+description = "Tree-sitter grammar for ArkTS (HarmonyOS development language)"
+version = "0.1.1"
+keywords = ["incremental", "parsing", "tree-sitter", "arkts", "harmonyos", "huawei"]
 classifiers = [
+  "Development Status :: 4 - Beta",
   "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
   "Topic :: Software Development :: Compilers",
   "Topic :: Text Processing :: Linguistic",
   "Typing :: Typed",
 ]
-authors = [{ name = "million" }]
+authors = [{ name = "million", email = "liya941314@gmail.com" }]  
 requires-python = ">=3.10"
 license.text = "MIT"
 readme = "README.md"
+dependencies = ["tree-sitter>=0.23.0"]
 
 [project.urls]
 Homepage = "https://github.com/Million-mo/tree-sitter-arkts"
+Repository = "https://github.com/Million-mo/tree-sitter-arkts"
+Issues = "https://github.com/Million-mo/tree-sitter-arkts/issues"
 
 [project.optional-dependencies]
 core = ["tree-sitter~=0.24"]

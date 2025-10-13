@@ -31,7 +31,7 @@
 ### Node.js
 
 ```bash
-npm install tree-sitter-arkts
+npm install tree-sitter-arkts-open
 ```
 
 ```javascript
@@ -57,6 +57,10 @@ console.log(tree.rootNode.toString());
 ```
 
 ### Python
+
+```bash
+pip install tree-sitter-arkts-open
+```
 
 ```python
 import tree_sitter_arkts as arkts
