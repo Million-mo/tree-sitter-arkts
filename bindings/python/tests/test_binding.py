@@ -1,17 +1,12 @@
 from unittest import TestCase
 
-import tree_sitter, tree_sitter_typescript
+import tree_sitter
+import tree_sitter_arkts
 
 
 class TestLanguage(TestCase):
-    def test_can_load_typescript_grammar(self):
+    def test_can_load_grammar(self):
         try:
-            tree_sitter.Language(tree_sitter_typescript.language_typescript())
+            tree_sitter.Language(tree_sitter_arkts.language())
         except Exception:
-            self.fail("Error loading TypeScript grammar")
-
-    def test_can_load_tsx_grammar(self):
-        try:
-            tree_sitter.Language(tree_sitter_typescript.language_tsx())
-        except Exception:
-            self.fail("Error loading TSX grammar")
+            self.fail("Error loading Arkts grammar")

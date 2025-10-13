@@ -1,21 +1,24 @@
 {
   "targets": [
     {
-      "target_name": "tree_sitter_typescript_binding",
+      "target_name": "tree_sitter_arkts_binding",
       "dependencies": [
         "<!(node -p \"require('node-addon-api').targets\"):node_addon_api_except",
       ],
       "include_dirs": [
-        "typescript/src",
+        "src",
       ],
       "sources": [
-        "typescript/src/parser.c",
-        "typescript/src/scanner.c",
-        "tsx/src/parser.c",
-        "tsx/src/scanner.c",
         "bindings/node/binding.cc",
+        "src/parser.c",
       ],
+      "variables": {
+        "has_scanner": "<!(node -p \"fs.existsSync('src/scanner.c')\")"
+      },
       "conditions": [
+        ["has_scanner=='true'", {
+          "sources+": ["src/scanner.c"],
+        }],
         ["OS!='win'", {
           "cflags_c": [
             "-std=c11",

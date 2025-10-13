@@ -4,8 +4,7 @@ includedir=${prefix}/@CMAKE_INSTALL_INCLUDEDIR@
 
 Name: tree-sitter-arkts
 Description: @PROJECT_DESCRIPTION@
-URL: @CMAKE_PROJECT_HOMEPAGE_URL@
-Version: @CMAKE_PROJECT_VERSION@
-Requires:
+URL: @PROJECT_HOMEPAGE_URL@
+Version: @PROJECT_VERSION@
 Libs: -L${libdir} -ltree-sitter-arkts
 Cflags: -I${includedir}

@@ -1,22 +1,15 @@
-package tree_sitter_typescript_test
+package tree_sitter_arkts_test
 
 import (
 	"testing"
 
 	tree_sitter "github.com/tree-sitter/go-tree-sitter"
-	tree_sitter_typescript "github.com/tree-sitter/tree-sitter-typescript/bindings/go"
+	tree_sitter_arkts "github.com/million-mo/arkts_language_server/bindings/go"
 )
 
-func TestCanLoadTypescriptGrammar(t *testing.T) {
-	language := tree_sitter.NewLanguage(tree_sitter_typescript.LanguageTypescript())
+func TestCanLoadGrammar(t *testing.T) {
+	language := tree_sitter.NewLanguage(tree_sitter_arkts.Language())
 	if language == nil {
-		t.Errorf("Error loading TypeScript grammar")
-	}
-}
-
-func TestCanLoadTSXGrammar(t *testing.T) {
-	language := tree_sitter.NewLanguage(tree_sitter_typescript.LanguageTSX())
-	if language == nil {
-		t.Errorf("Error loading TSX grammar")
+		t.Errorf("Error loading Arkts grammar")
 	}
 }

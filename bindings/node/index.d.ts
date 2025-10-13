@@ -19,11 +19,9 @@ type NodeInfo =
     });
 
 type Language = {
-  name: string;
   language: unknown;
   nodeTypeInfo: NodeInfo[];
 };
 
-declare const typescript: Language;
-declare const tsx: Language;
-export = {typescript, tsx}
+declare const language: Language;
+export = language;

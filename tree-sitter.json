@@ -1,96 +1,29 @@
 {
+  "$schema": "https://tree-sitter.github.io/tree-sitter/assets/schemas/config.schema.json",
   "grammars": [
     {
-      "name": "typescript",
-      "camelcase": "TypeScript",
-      "scope": "source.ts",
-      "path": "typescript",
-      "external-files": [
-        "common/scanner.h"
-      ],
+      "name": "arkts",
+      "camelcase": "Arkts",
+      "title": "Arkts",
+      "scope": "source.arkts",
       "file-types": [
-        "ts"
+        "ets"
       ],
-      "highlights": [
-        "queries/highlights.scm",
-        "node_modules/tree-sitter-javascript/queries/highlights.scm"
-      ],
-      "injections": "node_modules/tree-sitter-javascript/queries/injections.scm",
-      "locals": [
-        "queries/locals.scm",
-        "node_modules/tree-sitter-javascript/queries/locals.scm"
-      ],
-      "tags": [
-        "queries/tags.scm",
-        "node_modules/tree-sitter-javascript/queries/tags.scm"
-      ],
-      "injection-regex": "^(ts|typescript)$"
-    },
-    {
-      "name": "tsx",
-      "camelcase": "TSX",
-      "scope": "source.tsx",
-      "path": "tsx",
-      "external-files": [
-        "common/scanner.h"
-      ],
-      "file-types": [
-        "tsx"
-      ],
-      "highlights": [
-        "queries/highlights.scm",
-        "node_modules/tree-sitter-javascript/queries/highlights-jsx.scm",
-        "node_modules/tree-sitter-javascript/queries/highlights.scm"
-      ],
-      "injections": "node_modules/tree-sitter-javascript/queries/injections.scm",
-      "locals": "node_modules/tree-sitter-javascript/queries/locals.scm",
-      "tags": [
-        "queries/tags.scm",
-        "node_modules/tree-sitter-javascript/queries/tags.scm"
-      ],
-      "injection-regex": "^(ts|typescript)$"
-    },
-    {
-      "name": "flow",
-      "camelcase": "Flow",
-      "scope": "source.js.flow",
-      "path": "tsx",
-      "external-files": [
-        "common/scanner.h"
-      ],
-      "file-types": [
-        "js"
-      ],
-      "highlights": [
-        "queries/highlights.scm",
-        "node_modules/tree-sitter-javascript/queries/highlights-jsx.scm",
-        "node_modules/tree-sitter-javascript/queries/highlights.scm"
-      ],
-      "injections": "node_modules/tree-sitter-javascript/queries/injections.scm",
-      "locals": "node_modules/tree-sitter-javascript/queries/locals.scm",
-      "tags": [
-        "queries/tags.scm",
-        "node_modules/tree-sitter-javascript/queries/tags.scm"
-      ],
-      "content-regex": "@flow"
+      "injection-regex": "^arkts$",
+      "class-name": "TreeSitterArkts"
     }
   ],
   "metadata": {
-    "version": "0.23.2",
+    "version": "0.1.0",
     "license": "MIT",
-    "description": "TypeScript and TSX grammars for tree-sitter",
+    "description": "paser for arkts",
     "authors": [
       {
-        "name": "Max Brunsfeld",
-        "email": "maxbrunsfeld@gmail.com"
-      },
-      {
-        "name": "Amaan Qureshi",
-        "email": "amaanq12@gmail.com"
+        "name": "million"
       }
     ],
     "links": {
-      "repository": "https://github.com/tree-sitter/tree-sitter-typescript"
+      "repository": "https://github.com/Million-mo/arkts_language_server"
     }
   },
   "bindings": {
@@ -99,6 +32,7 @@
     "node": true,
     "python": true,
     "rust": true,
-    "swift": true
+    "swift": true,
+    "zig": false
   }
 }

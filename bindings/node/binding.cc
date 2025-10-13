@@ -2,8 +2,7 @@
 
 typedef struct TSLanguage TSLanguage;
 
-extern "C" TSLanguage *tree_sitter_typescript();
-extern "C" TSLanguage *tree_sitter_tsx();
+extern "C" TSLanguage *tree_sitter_arkts();
 
 // "tree-sitter", "language" hashed with BLAKE2
 const napi_type_tag LANGUAGE_TYPE_TAG = {
@@ -11,21 +10,10 @@ const napi_type_tag LANGUAGE_TYPE_TAG = {
 };
 
 Napi::Object Init(Napi::Env env, Napi::Object exports) {
-    auto typescript = Napi::Object::New(env);
-    typescript["name"] = Napi::String::New(env, "typescript");
-    auto typescript_language = Napi::External<TSLanguage>::New(env, tree_sitter_typescript());
-    typescript_language.TypeTag(&LANGUAGE_TYPE_TAG);
-    typescript["language"] = typescript_language;
-
-    auto tsx = Napi::Object::New(env);
-    tsx["name"] = Napi::String::New(env, "tsx");
-    auto tsx_language = Napi::External<TSLanguage>::New(env, tree_sitter_tsx());
-    tsx_language.TypeTag(&LANGUAGE_TYPE_TAG);
-    tsx["language"] = tsx_language;
-
-    exports["typescript"] = typescript;
-    exports["tsx"] = tsx;
+    auto language = Napi::External<TSLanguage>::New(env, tree_sitter_arkts());
+    language.TypeTag(&LANGUAGE_TYPE_TAG);
+    exports["language"] = language;
     return exports;
 }
 
-NODE_API_MODULE(tree_sitter_typescript_binding, Init)
+NODE_API_MODULE(tree_sitter_arkts_binding, Init)
