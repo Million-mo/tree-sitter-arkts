@@ -19,11 +19,29 @@ jobs:
   
   # 只发布到 PyPI
   pypi:
-    uses: tree-sitter/workflows/.github/workflows/package-pypi.yml@main
-    secrets:
-      PYPI_API_TOKEN: ${{secrets.PYPI_API_TOKEN}}
-    with:
-      generate: true
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/tree-sitter-arkts
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install build setuptools wheel
+
+      - name: Build package
+        run: python -m build
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
   
   # NPM 发布 (暂时禁用)
   # npm:
