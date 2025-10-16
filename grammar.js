@@ -83,6 +83,9 @@ module.exports = grammar({
         // 默认导出
         seq('default', choice(
           $.component_declaration,
+          $.interface_declaration,  // 支持 export default interface
+          $.type_declaration,       // 支持 export default type
+          $.enum_declaration,        // 支持 export default enum
           $.class_declaration,
           $.function_declaration,
           $.expression
@@ -685,15 +688,33 @@ module.exports = grammar({
 
     object_type: $ => seq(
       '{',
-      commaSep($.type_member),
+      optional(seq(
+        $.type_member,
+        repeat(choice(
+          seq(';', $.type_member),
+          seq(',', $.type_member)
+        )),
+        optional(choice(';', ','))  // 尾随分号或逗号
+      )),
       '}'
     ),
 
-    type_member: $ => seq(
-      $.identifier,
-      optional('?'),
-      ':',
-      $.type_annotation
+    type_member: $ => choice(
+      // 属性签名
+      seq(
+        $.identifier,
+        optional('?'),
+        ':',
+        $.type_annotation
+      ),
+      // 方法签名
+      seq(
+        $.identifier,
+        optional('?'),
+        $.parameter_list,
+        ':',
+        $.type_annotation
+      )
     ),
 
     // 数组字面量
