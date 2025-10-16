@@ -35,6 +35,7 @@ module.exports = grammar({
       $.component_declaration,
       $.interface_declaration,
       $.type_declaration,
+      $.enum_declaration,  // 枚举声明
       $.class_declaration,
       $.function_declaration,
       $.variable_declaration,
@@ -62,12 +63,24 @@ module.exports = grammar({
     export_declaration: $ => seq(
       'export',
       choice(
+        // Re-export 语法（转发导出）
+        seq('{', commaSep($.export_specifier), '}', 'from', $.string_literal, optional(';')),
+        seq('*', 'from', $.string_literal, optional(';')),
+        seq('*', 'as', $.identifier, 'from', $.string_literal, optional(';')),
+        
+        // 命名导出（无 from）
+        seq('{', commaSep($.export_specifier), '}', optional(';')),
+        
+        // 直接导出声明
         $.component_declaration,
         $.interface_declaration,
         $.type_declaration,
+        $.enum_declaration,  // 支持导出枚举
         $.class_declaration,
         $.function_declaration,
         $.variable_declaration,
+        
+        // 默认导出
         seq('default', choice(
           $.component_declaration,
           $.class_declaration,
@@ -75,6 +88,12 @@ module.exports = grammar({
           $.expression
         ))
       )
+    ),
+
+    // 导出说明符（支持重命名）
+    export_specifier: $ => seq(
+      $.identifier,
+      optional(seq('as', $.identifier))
     ),
 
     // 装饰器 - ArkTS核心特性，支持更多装饰器类型
@@ -607,6 +626,31 @@ module.exports = grammar({
         $.constructor_declaration
       )),
       '}'
+    ),
+
+    // 枚举声明
+    enum_declaration: $ => seq(
+      optional('const'),  // 支持 const enum
+      'enum',
+      $.identifier,
+      $.enum_body
+    ),
+
+    // 枚举体
+    enum_body: $ => seq(
+      '{',
+      optional(seq(
+        $.enum_member,
+        repeat(seq(',', $.enum_member)),
+        optional(',')  // 尾随逗号
+      )),
+      '}'
+    ),
+
+    // 枚举成员
+    enum_member: $ => seq(
+      $.identifier,
+      optional(seq('=', $.expression))  // 枚举值
     ),
 
     constructor_declaration: $ => seq(
