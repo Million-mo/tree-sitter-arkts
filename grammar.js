@@ -26,7 +26,23 @@ module.exports = grammar({
     // 以下是 ArkTS UI 相关的必需冲突
     [$.modifier_chain_expression, $.member_expression],  // 修饰符链 `.xxx()` 与成员访问 `.xxx` 的歧义
     [$.block_statement, $.extend_function_body],  // 普通函数体与 @Extend 函数体的歧义
-    [$.expression, $.extend_function_body]  // 表达式与 @Extend 函数体的歧义（modifier_chain 既是 expression 也是 extend_function_body的开始）
+    [$.expression, $.extend_function_body],  // 表达式与 @Extend 函数体的歧义（modifier_chain 既是 expression 也是 extend_function_body的开始）
+    [$.component_declaration],  // 支持 @Component export struct 语法的冲突
+    [$.primary_type, $.qualified_type],  // as 表达式中的类型注解冲突
+    [$.primary_type, $.generic_type],  // as 表达式中的泛型类型冲突
+    [$.primary_type, $.array_type],  // as 表达式中的数组类型冲突
+    [$.array_type],  // 数组类型本身的冲突
+    [$.binary_expression, $.call_expression],  // < 符号可以是比较运算符或泛型参数
+    [$.binary_expression, $.conditional_expression, $.call_expression],  // 条件表达式中的 < 歧义
+    [$.expression, $.qualified_type],  // 泛型调用中 identifier 与 qualified_type 的冲突
+    [$.expression, $.primary_type],  // 泛型调用中 identifier 与 primary_type 的冲突
+    [$.expression, $.generic_type],  // 泛型调用中 identifier 与 generic_type 的冲突
+    [$.expression, $.type_annotation],  // 泛型调用中表达式与类型注解的冲突
+    [$.expression, $.union_type],  // 泛型调用中表达式与联合类型的冲突
+    [$.expression, $.array_type],  // 表达式与数组类型的冲突
+    [$.null_literal, $.primary_type],  // null 关键字可以是字面量或类型
+    [$.boolean_literal, $.primary_type],  // true/false 可以是字面量或类型
+    [$.tuple_type, $.array_literal]  // 元组类型与数组字面量的冲突
   ],
 
   rules: {
@@ -35,7 +51,6 @@ module.exports = grammar({
       $.component_declaration,
       $.interface_declaration,
       $.type_declaration,
-      $.enum_declaration,  // 枚举声明
       $.class_declaration,
       $.function_declaration,
       $.variable_declaration,
@@ -63,40 +78,19 @@ module.exports = grammar({
     export_declaration: $ => seq(
       'export',
       choice(
-        // Re-export 语法（转发导出）
-        seq('{', commaSep($.export_specifier), '}', 'from', $.string_literal, optional(';')),
-        seq('*', 'from', $.string_literal, optional(';')),
-        seq('*', 'as', $.identifier, 'from', $.string_literal, optional(';')),
-        
-        // 命名导出（无 from）
-        seq('{', commaSep($.export_specifier), '}', optional(';')),
-        
-        // 直接导出声明
         $.component_declaration,
         $.interface_declaration,
         $.type_declaration,
-        $.enum_declaration,  // 支持导出枚举
         $.class_declaration,
         $.function_declaration,
         $.variable_declaration,
-        
-        // 默认导出
         seq('default', choice(
           $.component_declaration,
-          $.interface_declaration,  // 支持 export default interface
-          $.type_declaration,       // 支持 export default type
-          $.enum_declaration,        // 支持 export default enum
           $.class_declaration,
           $.function_declaration,
           $.expression
         ))
       )
-    ),
-
-    // 导出说明符（支持重命名）
-    export_specifier: $ => seq(
-      $.identifier,
-      optional(seq('as', $.identifier))
     ),
 
     // 装饰器 - ArkTS核心特性，支持更多装饰器类型
@@ -129,8 +123,12 @@ module.exports = grammar({
     ),
 
     // 组件声明 - ArkTS核心特性
+    // 支持两种格式：
+    // 1. @Component struct ...
+    // 2. @Component export struct ...
     component_declaration: $ => seq(
       repeat($.decorator),
+      optional('export'),  // 支持装饰器后 export
       'struct',
       $.identifier,
       optional($.type_parameters),
@@ -298,9 +296,12 @@ module.exports = grammar({
       $.boolean_literal,
       $.null_literal,
       $.new_expression,             // new表达式
+      $.await_expression,           // await表达式
+      $.as_expression,              // 类型断言 (value as Type)
       $.arrow_function,
       $.call_expression,
       $.member_expression,
+      $.subscript_expression,       // 索引访问表达式 arr[index]
       $.modifier_chain_expression,  // 新增：修饰符链表达式
       $.parenthesized_expression,
       $.state_binding_expression,  // 状态绑定表达式
@@ -371,17 +372,72 @@ module.exports = grammar({
     // @ 表达式（用于装饰器冲突解决）
     at_expression: $ => seq('@', $.expression),
 
+    // await 表达式
+    await_expression: $ => prec.right(21, seq(
+      'await',
+      $.expression
+    )),
+
+    // 类型断言表达式 - value as Type
+    as_expression: $ => prec.left(3, seq(
+      $.expression,
+      'as',
+      $.type_annotation
+    )),
+
     // 其他必需的规则定义会逐步添加
-    // 类型注解 - 支持数组类型
+    // 类型注解 - 支持数组类型和联合类型
     type_annotation: $ => choice(
+      $.conditional_type,  // 条件类型
+      $.union_type,      // 联合类型
+      $.primary_type     // 基础类型
+    ),
+
+    // 基础类型
+    primary_type: $ => choice(
       'number',
-      'string', 
+      'string',
       'boolean',
       'void',
       'any',
-      $.array_type,      // 数组类型如 string[]
+      'null',
+      'undefined',
+      'true',
+      'false',
+      $.array_type,
+      $.tuple_type,      // 元组类型，如 [string, number]
+      $.generic_type,    // 泛型类型，如 Promise<void>、Array<string>
+      $.qualified_type,  // 限定类型名，如 window.WindowStage
       $.identifier
     ),
+
+    // 泛型类型 - 支持 Type<T> 或 Type<T, U> 形式
+    generic_type: $ => prec.left(seq(
+      choice(
+        $.identifier,
+        $.qualified_type  // 支持 namespace.Type<T>
+      ),
+      $.type_arguments
+    )),
+
+    // 类型参数（用于泛型类型）
+    type_arguments: $ => seq(
+      '<',
+      commaSep($.type_annotation),  // 类型参数可以是任意类型注解
+      '>'
+    ),
+
+    // 限定类型名 - 支持 namespace.Type 形式
+    qualified_type: $ => prec.left(seq(
+      $.identifier,
+      repeat1(seq('.', $.identifier))
+    )),
+
+    // 联合类型 - A | B | C
+    union_type: $ => prec.left(2, seq(
+      $.primary_type,
+      repeat1(seq('|', $.primary_type))
+    )),
 
     // 数组类型
     array_type: $ => seq(
@@ -395,10 +451,36 @@ module.exports = grammar({
       repeat1(seq('[', ']'))
     ),
 
+    // 元组类型 - [A, B, C]
+    tuple_type: $ => seq(
+      '[',
+      commaSep($.type_annotation),
+      ']'
+    ),
+
+    // 条件类型 - T extends U ? X : Y
+    conditional_type: $ => prec.right(1, seq(
+      $.primary_type,
+      'extends',
+      $.type_annotation,
+      '?',
+      $.type_annotation,
+      ':',
+      $.type_annotation
+    )),
+
+    // 类型参数声明（用于声明泛型类、函数等）
     type_parameters: $ => seq(
       '<',
-      commaSep($.identifier),
+      commaSep($.type_parameter),
       '>'
+    ),
+
+    // 单个类型参数 - 支持约束和默认值
+    type_parameter: $ => seq(
+      $.identifier,
+      optional(seq('extends', $.type_annotation)),  // 泛型约束
+      optional(seq('=', $.type_annotation))  // 泛型默认值
     ),
 
     // 基本语句类型
@@ -574,18 +656,29 @@ module.exports = grammar({
     )),
 
     // 调用表达式 - 降低优先级，避免与修饰符链冲突
+    // 支持泛型调用，如 func<T>(arg)
     call_expression: $ => prec.left(1, seq(
       $.expression,
+      optional($.type_arguments),  // 支持泛型参数
       '(',
       commaSep($.expression),
       ')'
     )),
 
     // 成员表达式 - 降低优先级，避免与修饰符链冲突
+    // 支持可选链 ?.
     member_expression: $ => prec.left(1, seq(
       $.expression,
-      '.',
+      choice('.', '?.'),  // 支持 . 和 ?.
       $.identifier
+    )),
+
+    // 索引访问表达式 - arr[index]
+    subscript_expression: $ => prec.left(19, seq(
+      $.expression,
+      '[',
+      $.expression,
+      ']'
     )),
 
     parenthesized_expression: $ => seq(
@@ -618,6 +711,7 @@ module.exports = grammar({
       $.identifier,
       optional($.type_parameters),
       optional(seq('extends', $.type_annotation)),
+      optional($.implements_clause),
       $.class_body
     ),
 
@@ -631,29 +725,13 @@ module.exports = grammar({
       '}'
     ),
 
-    // 枚举声明
-    enum_declaration: $ => seq(
-      optional('const'),  // 支持 const enum
-      'enum',
-      $.identifier,
-      $.enum_body
-    ),
-
-    // 枚举体
-    enum_body: $ => seq(
-      '{',
-      optional(seq(
-        $.enum_member,
-        repeat(seq(',', $.enum_member)),
-        optional(',')  // 尾随逗号
-      )),
-      '}'
-    ),
-
-    // 枚举成员
-    enum_member: $ => seq(
-      $.identifier,
-      optional(seq('=', $.expression))  // 枚举值
+    // implements 子句
+    implements_clause: $ => seq(
+      'implements',
+      commaSep(choice(
+        $.identifier,
+        $.generic_type  // 支持实现泛型接口
+      ))
     ),
 
     constructor_declaration: $ => seq(
@@ -688,30 +766,25 @@ module.exports = grammar({
 
     object_type: $ => seq(
       '{',
-      optional(seq(
+      repeat(seq(
         $.type_member,
-        repeat(choice(
-          seq(';', $.type_member),
-          seq(',', $.type_member)
-        )),
-        optional(choice(';', ','))  // 尾随分号或逗号
+        optional(choice(';', ','))  // 支持分号或逗号分隔
       )),
       '}'
     ),
 
     type_member: $ => choice(
+      // 方法签名 - 需要更高优先级，因为有参数列表
+      prec(1, seq(
+        $.identifier,
+        optional($.type_parameters),
+        $.parameter_list,
+        optional(seq(':', $.type_annotation))
+      )),
       // 属性签名
       seq(
         $.identifier,
         optional('?'),
-        ':',
-        $.type_annotation
-      ),
-      // 方法签名
-      seq(
-        $.identifier,
-        optional('?'),
-        $.parameter_list,
         ':',
         $.type_annotation
       )
@@ -781,10 +854,11 @@ module.exports = grammar({
       prec.right(22, seq(choice('++', '--'), $.expression))
     ),
 
-    // new表达式
+    // new表达式 - 支持泛型实例化
     new_expression: $ => prec.right(21, seq(
       'new',
       $.expression,
+      optional($.type_arguments),  // 支持泛型参数，如 new Class<T>()
       optional(seq(
         '(',
         commaSep($.expression),
