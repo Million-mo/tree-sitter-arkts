@@ -852,6 +852,18 @@
               {
                 "type": "STRING",
                 "value": ")"
+              },
+              {
+                "type": "CHOICE",
+                "members": [
+                  {
+                    "type": "SYMBOL",
+                    "name": "container_content_body"
+                  },
+                  {
+                    "type": "BLANK"
+                  }
+                ]
               }
             ]
           },
@@ -939,6 +951,14 @@
                   {
                     "type": "STRING",
                     "value": "Grid"
+                  },
+                  {
+                    "type": "STRING",
+                    "value": "GridRow"
+                  },
+                  {
+                    "type": "STRING",
+                    "value": "GridCol"
                   },
                   {
                     "type": "STRING",
@@ -3146,12 +3166,16 @@
             "type": "CHOICE",
             "members": [
               {
-                "type": "SYMBOL",
-                "name": "expression"
+                "type": "PREC",
+                "value": 2,
+                "content": {
+                  "type": "SYMBOL",
+                  "name": "block_statement"
+                }
               },
               {
                 "type": "SYMBOL",
-                "name": "block_statement"
+                "name": "expression"
               }
             ]
           }

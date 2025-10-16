@@ -182,11 +182,11 @@ module.exports = grammar({
     ui_component: $ => prec.right(3, choice(
       // 基础组件
       seq('Text', '(', $.expression, ')'),
-      seq('Button', '(', optional(choice($.expression, $.component_parameters)), ')'),
+      seq('Button', '(', optional(choice($.expression, $.component_parameters)), ')', optional($.container_content_body)),  // Button 也可以有子组件
       seq('Image', '(', $.expression, ')'),
       seq(choice('TextInput', 'TextArea'), '(', optional($.component_parameters), ')'),
       // 布局容器 - 使用专门的容器内容体
-      seq(choice('Column', 'Row', 'Stack', 'Flex', 'Grid', 'List', 'ScrollList'), '(', optional($.component_parameters), ')', optional($.container_content_body)),
+      seq(choice('Column', 'Row', 'Stack', 'Flex', 'Grid', 'GridRow', 'GridCol', 'List', 'ScrollList'), '(', optional($.component_parameters), ')', optional($.container_content_body)),
       // 特殊容器项
       seq(choice('ListItem', 'GridItem'), '(', optional($.component_parameters), ')', optional($.container_content_body)),
       // 自定义组件
@@ -545,7 +545,10 @@ module.exports = grammar({
         $.parameter_list
       ),
       '=>',
-      choice($.expression, $.block_statement)
+      choice(
+        prec(2, $.block_statement),  // 提高优先级，确保 {} 被优先解析为块语句而不是空对象
+        $.expression
+      )
     )),
 
     // 调用表达式 - 降低优先级，避免与修饰符链冲突

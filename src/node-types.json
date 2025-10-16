@@ -1810,7 +1810,15 @@
     "named": false
   },
   {
+    "type": "GridCol",
+    "named": false
+  },
+  {
     "type": "GridItem",
+    "named": false
+  },
+  {
+    "type": "GridRow",
     "named": false
   },
   {
