@@ -22,12 +22,11 @@ module.exports = grammar({
     [$.block_statement, $.object_literal],
     [$.component_parameters, $.object_literal],
     [$.expression, $.property_assignment],
-    [$.expression_statement, $.member_expression],
     [$.if_statement, $.statement],
-    [$.arkts_ui_element, $.expression],  // UI元素与表达式冲突
-    [$.ui_element_with_modifiers, $.expression],  // 带修饰符的UI元素与表达式冲突
-    [$.ui_component, $.expression],  // UI组件与表达式冲突
-    [$.modifier_chain_expression, $.member_expression]  // 修饰符链表达式与成员表达式冲突
+    // 以下是 ArkTS UI 相关的必需冲突
+    [$.modifier_chain_expression, $.member_expression],  // 修饰符链 `.xxx()` 与成员访问 `.xxx` 的歧义
+    [$.block_statement, $.extend_function_body],  // 普通函数体与 @Extend 函数体的歧义
+    [$.expression, $.extend_function_body]  // 表达式与 @Extend 函数体的歧义（modifier_chain 既是 expression 也是 extend_function_body的开始）
   ],
 
   rules: {
@@ -83,6 +82,7 @@ module.exports = grammar({
       '@',
       choice(
         // 常用装饰器
+        'Entry',          // 入口装饰器
         'Component',
         'State', 
         'Prop',
@@ -148,16 +148,17 @@ module.exports = grammar({
     ),
 
     // build方法体 - 简化为整体处理
-    build_body: $ => seq(
+    // 注意：$.comment 不需要显式匹配，因为它已在 extras 中定义（会被自动跳过）
+    build_body: $ => prec(1, seq(
       '{',
       repeat(choice(
-        $.arkts_ui_element,    // ArkTS UI元素（组件、布局等）
+        $.ui_custom_component_statement,  // 自定义组件调用语句（带分号）
         $.ui_control_flow,     // UI控制流（if、ForEach等） 
-        $.expression_statement,  // 其他表达式
-        $.comment              // 注释
+        $.arkts_ui_element,    // ArkTS UI元素（组件、布局等）
+        $.expression_statement  // 其他表达式
       )),
       '}'
-    ),
+    )),
 
     // 修饰符链表达式 - 专门处理以点开头的连续调用
     modifier_chain_expression: $ => prec.right(20, seq(
@@ -193,22 +194,36 @@ module.exports = grammar({
     )),
 
     // 容器内容体 - 专门用于布局容器的内容，区别于build_body
-    container_content_body: $ => seq(
+    // 注意：$.comment 不需要显式匹配，因为它已在 extras 中定义（会被自动跳过）
+    container_content_body: $ => prec(1, seq(
       '{',
       repeat(choice(
-        $.arkts_ui_element,    // ArkTS UI元素
+        $.ui_custom_component_statement,  // 自定义组件调用语句（带分号）
         $.ui_control_flow,     // UI控制流
-        $.expression_statement,  // 其他表达式
-        $.comment              // 注释
+        $.arkts_ui_element,    // ArkTS UI元素
+        $.expression_statement  // 其他表达式
       )),
       '}'
-    ),
+    )),
 
     // ArkTS UI元素 - 先尝试带修饰符的元素，其次是普通元素
     arkts_ui_element: $ => choice(
       $.ui_element_with_modifiers,
       $.ui_component
     ),
+
+    // UI自定义组件调用语句 - 自定义组件调用 + 必需的分号
+    // 根据ArkUI官方规范：自定义组件调用属于表达式语句，需要分号结尾
+    ui_custom_component_statement: $ => prec(10, seq(
+      $.identifier,  // 自定义组件名
+      '(',
+      optional(choice(
+        $.component_parameters,
+        commaSep($.expression)
+      )),
+      ')',
+      ';'  // 必需的分号
+    )),
 
     // UI控制流
     ui_control_flow: $ => choice(
@@ -430,7 +445,13 @@ module.exports = grammar({
       $.expression_statement,
       $.if_statement,
       $.variable_declaration,
-      $.return_statement
+      $.return_statement,
+      $.try_statement,  // try/catch/finally 语句
+      $.throw_statement,  // throw 语句
+      $.for_statement,  // for 循环
+      $.while_statement,  // while 循环
+      $.break_statement,  // break 语句
+      $.continue_statement  // continue 语句
     ),
 
     variable_declaration: $ => seq(
@@ -448,6 +469,72 @@ module.exports = grammar({
     return_statement: $ => seq(
       'return',
       optional($.expression),
+      ';'
+    ),
+
+    // try/catch/finally 语句
+    try_statement: $ => seq(
+      'try',
+      $.block_statement,
+      optional($.catch_clause),
+      optional($.finally_clause)
+    ),
+
+    catch_clause: $ => seq(
+      'catch',
+      optional(seq(
+        '(',
+        $.identifier,  // 异常变量名
+        optional(seq(':', $.type_annotation)),  // 可选类型注释
+        ')'
+      )),
+      $.block_statement
+    ),
+
+    finally_clause: $ => seq(
+      'finally',
+      $.block_statement
+    ),
+
+    // throw 语句
+    throw_statement: $ => seq(
+      'throw',
+      $.expression,
+      ';'
+    ),
+
+    // for 循环
+    for_statement: $ => seq(
+      'for',
+      '(',
+      choice(
+        seq($.variable_declaration, $.expression, ';', optional($.expression)),  // for (let i = 0; i < 10; i++)
+        seq(optional($.expression), ';', optional($.expression), ';', optional($.expression))  // for (; i < 10; i++)
+      ),
+      ')',
+      choice($.block_statement, $.statement)
+    ),
+
+    // while 循环
+    while_statement: $ => seq(
+      'while',
+      '(',
+      $.expression,
+      ')',
+      choice($.block_statement, $.statement)
+    ),
+
+    // break 语句
+    break_statement: $ => seq(
+      'break',
+      optional($.identifier),  // 可选标签
+      ';'
+    ),
+
+    // continue 语句
+    continue_statement: $ => seq(
+      'continue',
+      optional($.identifier),  // 可选标签
       ';'
     ),
 
@@ -527,13 +614,26 @@ module.exports = grammar({
     ),
 
     function_declaration: $ => seq(
+      repeat($.decorator),  // 支持装饰器，如@Extend
       optional('async'),
       'function',
       $.identifier,
       optional($.type_parameters),
       $.parameter_list,
       optional(seq(':', $.type_annotation)),
-      $.block_statement
+      choice(
+        $.block_statement,
+        $.extend_function_body  // @Extend函数的特殊函数体
+      )
+    ),
+
+    // @Extend函数的特殊函数体 - 允许直接以修饰符链开始
+    // 注意：$.comment 不需要显式匹配，因为它已在 extras 中定义（会被自动跳过）
+    extend_function_body: $ => seq(
+      '{',
+      $.modifier_chain_expression,  // 至少一个修饰符链
+      repeat($.modifier_chain_expression),
+      '}'
     ),
 
     object_type: $ => seq(
