@@ -47,3 +47,7 @@ zig-out/
 *.tar.gz
 *.tgz
 *.zip
+
+# macOS artifacts
+.DS_Store
+**/.DS_Store
