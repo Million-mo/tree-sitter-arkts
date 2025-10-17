@@ -1,6 +1,6 @@
 {
   "name": "tree-sitter-arkts",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "paser for arkts",
   "repository": "https://github.com/million-mo/arkts_language_server",
   "license": "MIT",

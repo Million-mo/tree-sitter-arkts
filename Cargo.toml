@@ -1,7 +1,7 @@
 [package]
 name = "tree-sitter-arkts"
 description = "paser for arkts"
-version = "0.1.4"
+version = "0.1.5"
 authors = ["million"]
 license = "MIT"
 readme = "README.md"
