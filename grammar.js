@@ -51,6 +51,7 @@ module.exports = grammar({
       $.component_declaration,
       $.interface_declaration,
       $.type_declaration,
+      $.enum_declaration,  // 支持 enum 声明
       $.class_declaration,
       $.function_declaration,
       $.variable_declaration,
@@ -81,6 +82,7 @@ module.exports = grammar({
         $.component_declaration,
         $.interface_declaration,
         $.type_declaration,
+        $.enum_declaration,  // 支持 enum 导出
         $.class_declaration,
         $.function_declaration,
         $.variable_declaration,
@@ -702,6 +704,28 @@ module.exports = grammar({
       '=',
       $.type_annotation,
       ';'
+    ),
+
+    // enum 声明 - 支持 const enum 和普通 enum
+    enum_declaration: $ => seq(
+      optional('const'),
+      'enum',
+      $.identifier,
+      $.enum_body
+    ),
+
+    // enum 体
+    enum_body: $ => seq(
+      '{',
+      commaSep($.enum_member),
+      optional(','),  // 允许末尾逗号
+      '}'
+    ),
+
+    // enum 成员
+    enum_member: $ => seq(
+      $.identifier,
+      optional(seq('=', $.expression))  // 支持数字和字符串值
     ),
 
     class_declaration: $ => seq(

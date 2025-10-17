@@ -532,6 +532,59 @@
     }
   },
   {
+    "type": "enum_body",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "enum_member",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "enum_declaration",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "enum_body",
+          "named": true
+        },
+        {
+          "type": "identifier",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "enum_member",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "expression",
+          "named": true
+        },
+        {
+          "type": "identifier",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "escape_sequence",
     "named": true,
     "fields": {}
@@ -550,6 +603,10 @@
         },
         {
           "type": "component_declaration",
+          "named": true
+        },
+        {
+          "type": "enum_declaration",
           "named": true
         },
         {
@@ -1275,6 +1332,10 @@
         },
         {
           "type": "component_declaration",
+          "named": true
+        },
+        {
+          "type": "enum_declaration",
           "named": true
         },
         {
@@ -2256,6 +2317,10 @@
   },
   {
     "type": "else",
+    "named": false
+  },
+  {
+    "type": "enum",
     "named": false
   },
   {
