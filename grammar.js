@@ -18,31 +18,33 @@ module.exports = grammar({
   conflicts: $ => [
     [$.decorator, $.at_expression],
     [$.expression, $.parameter],
+    [$.expression, $.arrow_function],
+    [$.expression, $.arrow_function_parameters],
     [$.expression, $.state_binding_expression],
     [$.block_statement, $.object_literal],
     [$.component_parameters, $.object_literal],
     [$.expression, $.property_assignment],
     [$.if_statement, $.statement],
-    // 以下是 ArkTS UI 相关的必需冲突
-    [$.modifier_chain_expression, $.member_expression],  // 修饰符链 `.xxx()` 与成员访问 `.xxx` 的歧义
-    [$.block_statement, $.extend_function_body],  // 普通函数体与 @Extend 函数体的歧义
-    [$.expression, $.extend_function_body],  // 表达式与 @Extend 函数体的歧义（modifier_chain 既是 expression 也是 extend_function_body的开始）
-    [$.component_declaration],  // 支持 @Component export struct 语法的冲突
-    [$.primary_type, $.qualified_type],  // as 表达式中的类型注解冲突
-    [$.primary_type, $.generic_type],  // as 表达式中的泛型类型冲突
-    [$.primary_type, $.array_type],  // as 表达式中的数组类型冲突
-    [$.array_type],  // 数组类型本身的冲突
-    [$.binary_expression, $.call_expression],  // < 符号可以是比较运算符或泛型参数
-    [$.binary_expression, $.conditional_expression, $.call_expression],  // 条件表达式中的 < 歧义
-    [$.expression, $.qualified_type],  // 泛型调用中 identifier 与 qualified_type 的冲突
-    [$.expression, $.primary_type],  // 泛型调用中 identifier 与 primary_type 的冲突
-    [$.expression, $.generic_type],  // 泛型调用中 identifier 与 generic_type 的冲突
-    [$.expression, $.type_annotation],  // 泛型调用中表达式与类型注解的冲突
-    [$.expression, $.union_type],  // 泛型调用中表达式与联合类型的冲突
-    [$.expression, $.array_type],  // 表达式与数组类型的冲突
-    [$.null_literal, $.primary_type],  // null 关键字可以是字面量或类型
-    [$.boolean_literal, $.primary_type],  // true/false 可以是字面量或类型
-    [$.tuple_type, $.array_literal]  // 元组类型与数组字面量的冲突
+    [$.modifier_chain_expression, $.member_expression],
+    [$.block_statement, $.extend_function_body],
+    [$.expression, $.extend_function_body],
+    [$.component_declaration],
+    [$.primary_type, $.qualified_type],
+    [$.primary_type, $.generic_type],
+    [$.primary_type, $.array_type],
+    [$.array_type],
+    [$.binary_expression, $.call_expression],
+    [$.binary_expression, $.conditional_expression, $.call_expression],
+    [$.expression, $.qualified_type],
+    [$.expression, $.primary_type],
+    [$.expression, $.generic_type],
+    [$.expression, $.type_annotation],
+    [$.expression, $.union_type],
+    [$.expression, $.array_type],
+    [$.null_literal, $.primary_type],
+    [$.boolean_literal, $.primary_type],
+    [$.tuple_type, $.array_literal],
+    [$.argument_list, $.new_expression]
   ],
 
   rules: {
@@ -558,7 +560,9 @@ module.exports = grammar({
     ),
 
     parameter: $ => seq(
+      optional('...'),  // 支持剩余参数
       $.identifier,
+      optional('?'),  // 支持可选参数
       optional(seq(':', $.type_annotation)),
       optional(seq('=', $.expression))
     ),
@@ -666,12 +670,15 @@ module.exports = grammar({
       ';'
     ),
 
-    // 基本表达式支持
+    // 箭头函数 - 完整支持 TypeScript/ArkTS 语法
     arrow_function: $ => prec.right(1, seq(
+      optional('async'),  // 支持 async 箭头函数
+      optional($.type_parameters),  // 支持泛型：<T>(x: T) => T
       choice(
-        $.identifier,
-        $.parameter_list
+        $.arrow_function_parameters,  // 参数列表或单参数
+        $.identifier  // 单参数简化语法：x => x * 2
       ),
+      optional(seq(':', $.type_annotation)),  // 支持返回类型注解
       '=>',
       choice(
         prec(2, $.block_statement),  // 提高优先级，确保 {} 被优先解析为块语句而不是空对象
@@ -679,15 +686,39 @@ module.exports = grammar({
       )
     )),
 
+    // 箭头函数参数 - 支持完整的参数列表语法
+    arrow_function_parameters: $ => choice(
+      $.parameter_list,  // 标准参数列表：(x, y) => ...
+      $.arrow_single_parameter  // 带类型的单参数：(x: number) => ...
+    ),
+
+    // 单参数（带括号）- 用于箭头函数
+    arrow_single_parameter: $ => seq(
+      '(',
+      $.parameter,
+      ')'
+    ),
+
     // 调用表达式 - 降低优先级，避免与修饰符链冲突
     // 支持泛型调用，如 func<T>(arg)
     call_expression: $ => prec.left(1, seq(
       $.expression,
       optional($.type_arguments),  // 支持泛型参数
-      '(',
-      commaSep($.expression),
-      ')'
+      $.argument_list
     )),
+
+    // 参数列表（用于函数调用）
+    argument_list: $ => seq(
+      '(',
+      commaSep(choice(
+        $.expression,
+        $.spread_element  // 支持展开运算符
+      )),
+      ')'
+    ),
+
+    // 展开元素
+    spread_element: $ => seq('...', $.expression),
 
     // 成员表达式 - 降低优先级，避免与修饰符链冲突
     // 支持可选链 ?.
@@ -839,7 +870,10 @@ module.exports = grammar({
     // 数组字面量
     array_literal: $ => seq(
       '[',
-      commaSep(optional($.expression)),
+      commaSep(optional(choice(
+        $.expression,
+        seq('...', $.expression)  // 支持展开语法
+      ))),
       ']'
     ),
 
@@ -847,6 +881,7 @@ module.exports = grammar({
     object_literal: $ => seq(
       '{',
       commaSep($.property_assignment),
+      optional(','),  // 支持尾随逗号
       '}'
     ),
 
