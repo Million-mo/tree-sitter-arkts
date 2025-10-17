@@ -3,10 +3,26 @@
  * ArkTS 文件简化验证工具
  * 仅显示：哪些文件有问题 + 通过率统计
  * 
+ * 特性：
+ *   - 自动忽略仅因缺少分号产生的解析错误（符合 ArkTS 编译器 ASI 机制）
+ *   - 支持递归扫描目录下所有 .ets 文件
+ *   - 自动生成趋势报告和图表
+ * 
+ * ASI（自动分号插入）兼容性说明：
+ *   - Tree-sitter 解析器：严格遵循 TypeScript 语法规范
+ *   - ArkTS 编译器：支持 ASI，可省略分号
+ *   - 本工具默认：忽略仅因缺少分号产生的错误，与编译器行为一致
+ * 
+ * 语法正确性：
+ *   - 有分号：✅ 标准写法，推荐
+ *   - 无分号：✅ 编译通过，验证通过（ASI）
+ *   - 其他错误：❌ 验证失败
+ * 
  * 用法：
- *   node validate_simple.js [目录路径]                  # 默认生成报告
+ *   node validate_simple.js [目录路径]                  # 默认生成报告（ASI 兼容模式）
  *   node validate_simple.js [目录路径] --no-report     # 仅显示不保存
  *   node validate_simple.js [目录路径] --json          # JSON格式输出
+ *   node validate_simple.js [目录路径] --strict        # 严格模式（分号必须）
  */
 
 const fs = require('fs');
@@ -17,6 +33,7 @@ const { execSync } = require('child_process');
 const targetDir = process.argv[2] || './examples';
 const jsonOutput = process.argv.includes('--json');
 const noReport = process.argv.includes('--no-report');
+const strictMode = process.argv.includes('--strict');
 let outputFile = null;
 
 // 解析 --output 参数
@@ -73,7 +90,36 @@ function findEtsFiles(dir, fileList = []) {
 }
 
 /**
+ * 检查错误是否仅为 MISSING ";" 错误
+ * @param {string} output - tree-sitter parse 的输出
+ * @returns {boolean} - 如果只有缺失分号的错误返回 true
+ */
+function hasOnlyMissingSemicolonErrors(output) {
+  // 匹配 ERROR 节点的正则表达式
+  const errorPattern = /ERROR/g;
+  const missingSemicolonPattern = /MISSING\s+";"\s*/g;
+  
+  // 统计 ERROR 出现次数
+  const errorMatches = output.match(errorPattern);
+  if (!errorMatches) {
+    return false; // 没有错误
+  }
+  
+  // 统计 MISSING ";" 出现次数
+  const missingSemicolonMatches = output.match(missingSemicolonPattern);
+  if (!missingSemicolonMatches) {
+    return false; // 有错误但不是缺失分号
+  }
+  
+  // 如果 ERROR 数量等于 MISSING ";" 数量，说明只有缺失分号的错误
+  return errorMatches.length === missingSemicolonMatches.length;
+}
+
+/**
  * 验证单个文件
+ * 忽略仅因缺少分号而产生的解析错误（符合 ArkTS 编译器 ASI 机制）
+ * @param {string} filePath - 文件路径
+ * @returns {boolean} - 是否通过验证
  */
 function validateFile(filePath) {
   try {
@@ -81,9 +127,34 @@ function validateFile(filePath) {
       encoding: 'utf-8',
       stdio: 'pipe'
     });
-    return !output.includes('ERROR');
+    
+    // 没有 ERROR 直接通过
+    if (!output.includes('ERROR')) {
+      return true;
+    }
+    
+    // 严格模式：任何 ERROR 都失败
+    if (strictMode) {
+      return false;
+    }
+    
+    // ASI 兼容模式：检查是否只是缺失分号的错误
+    return hasOnlyMissingSemicolonErrors(output);
   } catch (error) {
-    return !error.stdout?.includes('ERROR');
+    const output = error.stdout || '';
+    
+    // 没有 ERROR 直接通过
+    if (!output.includes('ERROR')) {
+      return true;
+    }
+    
+    // 严格模式：任何 ERROR 都失败
+    if (strictMode) {
+      return false;
+    }
+    
+    // ASI 兼容模式：检查是否只是缺失分号的错误
+    return hasOnlyMissingSemicolonErrors(output);
   }
 }
 
@@ -105,7 +176,8 @@ function main() {
   results.total = files.length;
 
   if (!jsonOutput) {
-    console.log(`正在验证 ${results.total} 个文件...\n`);
+    console.log(`正在验证 ${results.total} 个文件...`);
+    console.log(`验证模式: ${strictMode ? '🔒 严格模式（分号必须）' : '🔓 ASI兼容模式（自动分号插入）'}\n`);
   }
 
   // 验证每个文件

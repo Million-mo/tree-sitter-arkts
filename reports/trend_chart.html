@@ -84,30 +84,30 @@
     <div style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
       <label style="font-weight: bold; color: #333; margin-right: 10px;">📁 选择目录:</label>
       <select id="dirSelector" style="padding: 10px 15px; border-radius: 8px; border: 2px solid #667eea; font-size: 1em; cursor: pointer; background: white; min-width: 300px;">
-        <option value="/Users/million_mo/projects/hmos_projects/hmosworld/" >/Users/million_mo/projects/hmos_projects/hmosworld/</option><option value="./examples" selected>./examples</option>
+        <option value="/Users/million_mo/projects/hmos_projects/hmosworld/" selected>/Users/million_mo/projects/hmos_projects/hmosworld/</option><option value="./examples" >./examples</option>
       </select>
-      <span style="margin-left: 15px; color: #666; font-size: 0.9em;">共 <span id="totalRuns">2</span> 次验证</span>
+      <span style="margin-left: 15px; color: #666; font-size: 0.9em;">共 <span id="totalRuns">5</span> 次验证</span>
     </div>
     
     <div class="stats">
       <div class="stat-card">
         <div class="stat-label">最新通过率</div>
-        <div class="stat-value" id="statPassRate">34.78%</div>
-        <div class="stat-trend trend-down" id="statPassRateTrend">
-          ↓ 0.00%
+        <div class="stat-value" id="statPassRate">46.29%</div>
+        <div class="stat-trend trend-up" id="statPassRateTrend">
+          ↑ 2.29%
         </div>
       </div>
       <div class="stat-card">
         <div class="stat-label">总文件数</div>
-        <div class="stat-value" id="statTotal">23</div>
+        <div class="stat-value" id="statTotal">175</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">最新通过数</div>
-        <div class="stat-value" style="color: #10b981;" id="statPassed">8</div>
+        <div class="stat-value" style="color: #10b981;" id="statPassed">81</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">最新失败数</div>
-        <div class="stat-value" style="color: #ef4444;" id="statFailed">15</div>
+        <div class="stat-value" style="color: #ef4444;" id="statFailed">94</div>
       </div>
     </div>
 
@@ -126,13 +126,13 @@
     </div>
 
     <div class="footer">
-      最后更新: 2025/10/17 15:55:56
+      最后更新: 2025/10/17 17:07:33
     </div>
   </div>
 
   <script>
     // 所有目录的数据
-    const allData = {"/Users/million_mo/projects/hmos_projects/hmosworld/":{"labels":["10/17 15:08","10/17 15:34","10/17 15:43"],"passRateData":[30.86,38.29,40.57],"passedData":[54,67,71],"failedData":[121,108,104],"totalData":[175,175,175],"count":3,"latest":{"timestamp":"2025-10-17T07:43:19.580Z","datetime":"2025/10/17 15:43:19","targetDir":"/Users/million_mo/projects/hmos_projects/hmosworld/","total":175,"passed":71,"failed":104,"passRate":"40.57"},"previous":{"timestamp":"2025-10-17T07:34:53.120Z","datetime":"2025/10/17 15:34:53","targetDir":"/Users/million_mo/projects/hmos_projects/hmosworld/","total":175,"passed":67,"failed":108,"passRate":"38.29"}},"./examples":{"labels":["10/17 15:53","10/17 15:55"],"passRateData":[34.78,34.78],"passedData":[8,8],"failedData":[15,15],"totalData":[23,23],"count":2,"latest":{"timestamp":"2025-10-17T07:55:56.571Z","datetime":"2025/10/17 15:55:56","targetDir":"./examples","total":23,"passed":8,"failed":15,"passRate":"34.78"},"previous":{"timestamp":"2025-10-17T07:53:11.194Z","datetime":"2025/10/17 15:53:11","targetDir":"./examples","total":23,"passed":8,"failed":15,"passRate":"34.78"}}};
+    const allData = {"/Users/million_mo/projects/hmos_projects/hmosworld/":{"labels":["10/17 15:08","10/17 15:34","10/17 15:43","10/17 16:44","10/17 17:07"],"passRateData":[30.86,38.29,40.57,44,46.29],"passedData":[54,67,71,77,81],"failedData":[121,108,104,98,94],"totalData":[175,175,175,175,175],"count":5,"latest":{"timestamp":"2025-10-17T09:07:32.370Z","datetime":"2025/10/17 17:07:32","targetDir":"/Users/million_mo/projects/hmos_projects/hmosworld/","total":175,"passed":81,"failed":94,"passRate":"46.29"},"previous":{"timestamp":"2025-10-17T08:44:41.538Z","datetime":"2025/10/17 16:44:41","targetDir":"/Users/million_mo/projects/hmos_projects/hmosworld/","total":175,"passed":77,"failed":98,"passRate":"44.00"}},"./examples":{"labels":["10/17 15:53","10/17 15:55"],"passRateData":[34.78,34.78],"passedData":[8,8],"failedData":[15,15],"totalData":[23,23],"count":2,"latest":{"timestamp":"2025-10-17T07:55:56.571Z","datetime":"2025/10/17 15:55:56","targetDir":"./examples","total":23,"passed":8,"failed":15,"passRate":"34.78"},"previous":{"timestamp":"2025-10-17T07:53:11.194Z","datetime":"2025/10/17 15:53:11","targetDir":"./examples","total":23,"passed":8,"failed":15,"passRate":"34.78"}}};
     let currentChart1, currentChart2;
     
     // 初始化图表
@@ -252,7 +252,7 @@
     });
     
     // 初始化默认目录
-    initCharts('./examples');
+    initCharts('/Users/million_mo/projects/hmos_projects/hmosworld/');
   </script>
 </body>
 </html>

@@ -94,6 +94,10 @@
         {
           "type": "type_annotation",
           "named": true
+        },
+        {
+          "type": "type_parameters",
+          "named": true
         }
       ]
     }
