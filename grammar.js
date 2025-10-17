@@ -79,6 +79,19 @@ module.exports = grammar({
     export_declaration: $ => seq(
       'export',
       choice(
+        // export { ... } from '...' - 重新导出
+        seq(
+          '{',
+          commaSep(choice(
+            $.identifier,
+            seq($.identifier, 'as', $.identifier)
+          )),
+          '}',
+          optional(seq('from', $.string_literal))
+        ),
+        // export * from '...' - 全部导出
+        seq('*', optional(seq('as', $.identifier)), 'from', $.string_literal),
+        // 导出声明
         $.component_declaration,
         $.interface_declaration,
         $.type_declaration,
@@ -92,7 +105,8 @@ module.exports = grammar({
           $.function_declaration,
           $.expression
         ))
-      )
+      ),
+      optional(';')
     ),
 
     // 装饰器 - ArkTS核心特性，支持更多装饰器类型
@@ -388,10 +402,11 @@ module.exports = grammar({
     )),
 
     // 其他必需的规则定义会逐步添加
-    // 类型注解 - 支持数组类型和联合类型
+    // 类型注解 - 支持数组类型、联合类型和函数类型
     type_annotation: $ => choice(
       $.conditional_type,  // 条件类型
       $.union_type,      // 联合类型
+      $.function_type,   // 函数类型
       $.primary_type     // 基础类型
     ),
 
@@ -439,6 +454,13 @@ module.exports = grammar({
     union_type: $ => prec.left(2, seq(
       $.primary_type,
       repeat1(seq('|', $.primary_type))
+    )),
+
+    // 函数类型 - (param: Type) => ReturnType
+    function_type: $ => prec.right(3, seq(
+      $.parameter_list,
+      '=>',
+      $.type_annotation
     )),
 
     // 数组类型
