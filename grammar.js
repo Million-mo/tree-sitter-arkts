@@ -27,9 +27,13 @@ module.exports = grammar({
     [$.array_literal, $.property_name],  // 计算属性名与数组字面量的歧义
     [$.function_expression, $.function_declaration],  // 函数表达式与函数声明的歧义
     [$.if_statement, $.statement],
+    [$.ui_if_statement, $.statement],  // ui_if_statement 与 statement 的歧义
     // 以下是 ArkTS UI 相关的必需冲突
     [$.modifier_chain_expression, $.member_expression],  // 修饰符链 `.xxx()` 与成员访问 `.xxx` 的歧义
     [$.block_statement, $.extend_function_body],  // 普通函数体与 @Extend 函数体的歧义
+    [$.block_statement, $.builder_function_body],  // 普通函数体与 @Builder 函数体的歧义
+    [$.statement, $.builder_function_body],  // 语句与 @Builder 函数体的歧义
+    [$.ui_if_statement, $.block_statement, $.object_literal],  // ui_if_statement 与 block_statement/object_literal 的歧义
     [$.expression, $.extend_function_body],  // 表达式与 @Extend 函数体的歧义（modifier_chain 既是 expression 也是 extend_function_body的开始）
     [$.component_declaration],  // 支持 @Component export struct 语法的冲突
     [$.primary_type, $.qualified_type],  // as 表达式中的类型注解冲突
@@ -51,7 +55,9 @@ module.exports = grammar({
     [$.null_literal, $.primary_type],  // null 关键字可以是字面量或类型
     [$.boolean_literal, $.primary_type],  // true/false 可以是字面量或类型
     [$.tuple_type, $.array_literal],  // 元组类型与数组字面量的冲突
-    [$.argument_list, $.new_expression]  // 参数列表与 new 表达式的冲突
+    [$.argument_list, $.new_expression],  // 参数列表与 new 表达式的冲突
+    [$.primary_type, $.parameter],  // 括号类型与函数参数列表的冲突
+    [$.expression, $.primary_type, $.parameter]  // 括号类型与函数参数列表的三方冲突
   ],
 
   rules: {
@@ -63,6 +69,8 @@ module.exports = grammar({
       $.enum_declaration,  // 支持 enum 声明
       $.class_declaration,
       $.function_declaration,
+      $.decorated_function_declaration,  // 带装饰器的函数声明
+      $.decorated_export_declaration,  // 带装饰器的导出声明
       $.variable_declaration,
       $.export_declaration
     )),
@@ -77,14 +85,52 @@ module.exports = grammar({
     import_declaration: $ => seq(
       'import',
       choice(
+        // 混合导入：import defaultExport, { namedExport } from '...'
+        seq(
+          $.identifier,
+          ',',
+          '{', commaSep($.identifier), '}',
+          'from',
+          $.string_literal
+        ),
+        // 默认导入：import identifier from '...'
         seq($.identifier, 'from', $.string_literal),
+        // 命名导入：import { ... } from '...'
         seq('{', commaSep($.identifier), '}', 'from', $.string_literal),
+        // 全部导入：import * as identifier from '...'
         seq('*', 'as', $.identifier, 'from', $.string_literal)
       ),
       optional(';')
     ),
 
-    // 导出声明
+    // 带装饰器的导出声明（用于 @Builder export function 等）
+    decorated_export_declaration: $ => seq(
+      repeat1($.decorator),  // 至少一个装饰器
+      'export',
+      choice(
+        // export function with special body
+        seq(
+          optional('async'),
+          'function',
+          $.identifier,
+          optional($.type_parameters),
+          $.parameter_list,
+          optional(seq(':', $.type_annotation)),
+          choice(
+            prec(2, $.builder_function_body),  // @Builder 函数体
+            prec(1, $.extend_function_body),   // @Extend 函数体
+            $.block_statement         // 普通函数体
+          )
+        ),
+        seq('default', choice(
+          $.function_declaration,
+          $.expression
+        ))
+      ),
+      optional(';')
+    ),
+
+    // 导出声明（无装饰器）
     export_declaration: $ => seq(
       'export',
       choice(
@@ -106,7 +152,7 @@ module.exports = grammar({
         $.type_declaration,
         $.enum_declaration,  // 支持 enum 导出
         $.class_declaration,
-        $.function_declaration,
+        $.function_declaration,  // 无装饰器的函数
         $.variable_declaration,
         seq('default', choice(
           $.component_declaration,
@@ -437,6 +483,7 @@ module.exports = grammar({
       $.tuple_type,      // 元组类型，如 [string, number]
       $.generic_type,    // 泛型类型，如 Promise<void>、Array<string>
       $.qualified_type,  // 限定类型名，如 window.WindowStage
+      $.parenthesized_type,  // 括号类型，如 ((param: string) => void)
       $.identifier
     ),
 
@@ -493,6 +540,13 @@ module.exports = grammar({
       commaSep($.type_annotation),
       ']'
     ),
+
+    // 括号类型 - 用于包裹任何类型，如 ((param: string) => void)
+    parenthesized_type: $ => prec.dynamic(1, seq(
+      '(',
+      $.type_annotation,
+      ')'
+    )),
 
     // 条件类型 - T extends U ? X : Y
     conditional_type: $ => prec.right(1, seq(
@@ -829,8 +883,9 @@ module.exports = grammar({
       $.block_statement
     ),
 
-    function_declaration: $ => seq(
-      repeat($.decorator),  // 支持装饰器，如@Extend
+    // 带装饰器的函数声明（用于 @Builder、@Extend 等）
+    decorated_function_declaration: $ => seq(
+      repeat1($.decorator),  // 至少一个装饰器
       optional('async'),
       'function',
       $.identifier,
@@ -838,9 +893,32 @@ module.exports = grammar({
       $.parameter_list,
       optional(seq(':', $.type_annotation)),
       choice(
-        $.block_statement,
-        $.extend_function_body  // @Extend函数的特殊函数体
+        prec(2, $.builder_function_body),  // 提高优先级，优先尝试解析为 Builder 函数体
+        prec(1, $.extend_function_body),   // @Extend 函数体
+        $.block_statement         // 普通函数体
       )
+    ),
+
+    // @Builder 函数体 - 与 build_body 相同，支持 UI 组件
+    builder_function_body: $ => prec(1, seq(
+      '{',
+      repeat(choice(
+        $.ui_custom_component_statement,  // 自定义组件调用语句（带分号）
+        $.ui_control_flow,     // UI控制流（if、ForEach等） 
+        $.arkts_ui_element,    // ArkTS UI元素（组件、布局等）
+        $.expression_statement  // 其他表达式
+      )),
+      '}'
+    )),
+
+    function_declaration: $ => seq(
+      optional('async'),
+      'function',
+      $.identifier,
+      optional($.type_parameters),
+      $.parameter_list,
+      optional(seq(':', $.type_annotation)),
+      $.block_statement
     ),
 
     // @Extend函数的特殊函数体 - 允许直接以修饰符链开始
