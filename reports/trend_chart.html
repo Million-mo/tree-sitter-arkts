@@ -86,15 +86,15 @@
       <select id="dirSelector" style="padding: 10px 15px; border-radius: 8px; border: 2px solid #667eea; font-size: 1em; cursor: pointer; background: white; min-width: 300px;">
         <option value="/Users/million_mo/projects/hmos_projects/hmosworld/" selected>/Users/million_mo/projects/hmos_projects/hmosworld/</option><option value="./examples" >./examples</option>
       </select>
-      <span style="margin-left: 15px; color: #666; font-size: 0.9em;">共 <span id="totalRuns">5</span> 次验证</span>
+      <span style="margin-left: 15px; color: #666; font-size: 0.9em;">共 <span id="totalRuns">6</span> 次验证</span>
     </div>
     
     <div class="stats">
       <div class="stat-card">
         <div class="stat-label">最新通过率</div>
-        <div class="stat-value" id="statPassRate">46.29%</div>
+        <div class="stat-value" id="statPassRate">52.00%</div>
         <div class="stat-trend trend-up" id="statPassRateTrend">
-          ↑ 2.29%
+          ↑ 5.71%
         </div>
       </div>
       <div class="stat-card">
@@ -103,11 +103,11 @@
       </div>
       <div class="stat-card">
         <div class="stat-label">最新通过数</div>
-        <div class="stat-value" style="color: #10b981;" id="statPassed">81</div>
+        <div class="stat-value" style="color: #10b981;" id="statPassed">91</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">最新失败数</div>
-        <div class="stat-value" style="color: #ef4444;" id="statFailed">94</div>
+        <div class="stat-value" style="color: #ef4444;" id="statFailed">84</div>
       </div>
     </div>
 
@@ -126,13 +126,13 @@
     </div>
 
     <div class="footer">
-      最后更新: 2025/10/17 17:07:33
+      最后更新: 2025/10/18 11:44:53
     </div>
   </div>
 
   <script>
     // 所有目录的数据
-    const allData = {"/Users/million_mo/projects/hmos_projects/hmosworld/":{"labels":["10/17 15:08","10/17 15:34","10/17 15:43","10/17 16:44","10/17 17:07"],"passRateData":[30.86,38.29,40.57,44,46.29],"passedData":[54,67,71,77,81],"failedData":[121,108,104,98,94],"totalData":[175,175,175,175,175],"count":5,"latest":{"timestamp":"2025-10-17T09:07:32.370Z","datetime":"2025/10/17 17:07:32","targetDir":"/Users/million_mo/projects/hmos_projects/hmosworld/","total":175,"passed":81,"failed":94,"passRate":"46.29"},"previous":{"timestamp":"2025-10-17T08:44:41.538Z","datetime":"2025/10/17 16:44:41","targetDir":"/Users/million_mo/projects/hmos_projects/hmosworld/","total":175,"passed":77,"failed":98,"passRate":"44.00"}},"./examples":{"labels":["10/17 15:53","10/17 15:55"],"passRateData":[34.78,34.78],"passedData":[8,8],"failedData":[15,15],"totalData":[23,23],"count":2,"latest":{"timestamp":"2025-10-17T07:55:56.571Z","datetime":"2025/10/17 15:55:56","targetDir":"./examples","total":23,"passed":8,"failed":15,"passRate":"34.78"},"previous":{"timestamp":"2025-10-17T07:53:11.194Z","datetime":"2025/10/17 15:53:11","targetDir":"./examples","total":23,"passed":8,"failed":15,"passRate":"34.78"}}};
+    const allData = {"/Users/million_mo/projects/hmos_projects/hmosworld/":{"labels":["10/17 15:08","10/17 15:34","10/17 15:43","10/17 16:44","10/17 17:07","10/18 11:44"],"passRateData":[30.86,38.29,40.57,44,46.29,52],"passedData":[54,67,71,77,81,91],"failedData":[121,108,104,98,94,84],"totalData":[175,175,175,175,175,175],"count":6,"latest":{"timestamp":"2025-10-18T03:44:52.253Z","datetime":"2025/10/18 11:44:52","targetDir":"/Users/million_mo/projects/hmos_projects/hmosworld/","total":175,"passed":91,"failed":84,"passRate":"52.00"},"previous":{"timestamp":"2025-10-17T09:07:32.370Z","datetime":"2025/10/17 17:07:32","targetDir":"/Users/million_mo/projects/hmos_projects/hmosworld/","total":175,"passed":81,"failed":94,"passRate":"46.29"}},"./examples":{"labels":["10/17 15:53","10/17 15:55"],"passRateData":[34.78,34.78],"passedData":[8,8],"failedData":[15,15],"totalData":[23,23],"count":2,"latest":{"timestamp":"2025-10-17T07:55:56.571Z","datetime":"2025/10/17 15:55:56","targetDir":"./examples","total":23,"passed":8,"failed":15,"passRate":"34.78"},"previous":{"timestamp":"2025-10-17T07:53:11.194Z","datetime":"2025/10/17 15:53:11","targetDir":"./examples","total":23,"passed":8,"failed":15,"passRate":"34.78"}}};
     let currentChart1, currentChart2;
     
     // 初始化图表

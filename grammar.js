@@ -23,6 +23,9 @@ module.exports = grammar({
     [$.block_statement, $.object_literal],
     [$.component_parameters, $.object_literal],
     [$.expression, $.property_assignment],
+    [$.expression, $.property_name],  // 对象方法中标识符的歧义
+    [$.array_literal, $.property_name],  // 计算属性名与数组字面量的歧义
+    [$.function_expression, $.function_declaration],  // 函数表达式与函数声明的歧义
     [$.if_statement, $.statement],
     // 以下是 ArkTS UI 相关的必需冲突
     [$.modifier_chain_expression, $.member_expression],  // 修饰符链 `.xxx()` 与成员访问 `.xxx` 的歧义
@@ -35,6 +38,10 @@ module.exports = grammar({
     [$.array_type],  // 数组类型本身的冲突
     [$.binary_expression, $.call_expression],  // < 符号可以是比较运算符或泛型参数
     [$.binary_expression, $.conditional_expression, $.call_expression],  // 条件表达式中的 < 歧义
+    [$.binary_expression, $.member_expression],  // 可选链与二元表达式的歧义
+    [$.binary_expression, $.subscript_expression],  // 可选链索引与二元表达式的歧义
+    [$.binary_expression, $.call_expression, $.member_expression, $.subscript_expression],  // 可选链调用综合歧义
+    [$.conditional_expression, $.call_expression, $.member_expression, $.subscript_expression],  // 条件表达式后续可选链的歧义
     [$.expression, $.qualified_type],  // 泛型调用中 identifier 与 qualified_type 的冲突
     [$.expression, $.primary_type],  // 泛型调用中 identifier 与 primary_type 的冲突
     [$.expression, $.generic_type],  // 泛型调用中 identifier 与 generic_type 的冲突
@@ -171,6 +178,7 @@ module.exports = grammar({
       optional('static'),
       optional('readonly'),  // 支持readonly修饰符
       $.identifier,
+      optional('?'),  // 支持可选属性标记
       optional(seq(':', $.type_annotation)),
       optional(seq('=', $.expression)),
       ';'
@@ -317,6 +325,7 @@ module.exports = grammar({
       $.await_expression,           // await表达式
       $.as_expression,              // 类型断言 (value as Type)
       $.arrow_function,
+      $.function_expression,        // 函数表达式
       $.call_expression,
       $.member_expression,
       $.subscript_expression,       // 索引访问表达式 arr[index]
@@ -350,6 +359,7 @@ module.exports = grammar({
     // 二元表达式
     binary_expression: $ => choice(
       prec.left(10, seq($.expression, '||', $.expression)),
+      prec.left(10, seq($.expression, '??', $.expression)),  // 支持空值合并运算符
       prec.left(11, seq($.expression, '&&', $.expression)),
       prec.left(12, seq($.expression, '|', $.expression)),
       prec.left(13, seq($.expression, '^', $.expression)),
@@ -672,6 +682,7 @@ module.exports = grammar({
 
     // 基本表达式支持
     arrow_function: $ => prec.right(1, seq(
+      optional('async'),  // 支持异步箭头函数
       choice(
         $.identifier,
         $.parameter_list
@@ -684,12 +695,26 @@ module.exports = grammar({
       )
     )),
 
+    // 函数表达式 - 支持匿名和命名函数表达式
+    function_expression: $ => seq(
+      optional('async'),  // 支持异步函数表达式
+      'function',
+      optional($.identifier),  // 可选的函数名
+      optional($.type_parameters),
+      $.parameter_list,
+      optional(seq(':', $.type_annotation)),
+      $.block_statement
+    ),
+
     // 调用表达式 - 降低优先级，避免与修饰符链冲突
     // 支持泛型调用，如 func<T>(arg)
     call_expression: $ => prec.left(1, seq(
       $.expression,
       optional($.type_arguments),  // 支持泛型参数
-      $.argument_list
+      choice(
+        seq('?.', $.argument_list),  // 支持可选链调用 fn?.(args)
+        $.argument_list
+      )
     )),
 
     // 参数列表（用于函数调用）
@@ -716,6 +741,7 @@ module.exports = grammar({
     // 索引访问表达式 - arr[index]
     subscript_expression: $ => prec.left(19, seq(
       $.expression,
+      optional('?.'),  // 支持可选链索引访问 obj?.[expr]
       '[',
       $.expression,
       ']'
@@ -872,6 +898,15 @@ module.exports = grammar({
 
     // 属性赋值
     property_assignment: $ => choice(
+      // 对象方法（包括 async）
+      seq(
+        optional('async'),
+        $.property_name,
+        optional($.type_parameters),
+        $.parameter_list,
+        optional(seq(':', $.type_annotation)),
+        $.block_statement
+      ),
       seq($.property_name, ':', $.expression),
       $.identifier,  // 简写属性
       seq('...', $.expression)  // 展开运算符
