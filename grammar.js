@@ -708,6 +708,40 @@ module.exports = grammar({
       ))
     ),
 
+    // switch语句类型
+
+    switch_statement: $ => seq(
+      'switch',
+      '(',
+      $.expression,
+      ')',
+      '{',
+      repeat(choice(
+        $.switch_case,
+        $.switch_default
+      )),
+      '}'
+    ),
+
+    switch_case: $ => seq(
+      'case',
+      field('value', $.expression),
+      ':',
+      repeat(field('consequent', choice(
+        $.statement,
+        $.block_statement
+      )))
+    ),
+
+    switch_default: $ => seq(
+      'default',
+      ':',
+      repeat(field('consequent', choice(
+        $.statement,
+        $.block_statement
+      )))
+    ),
+
     // 方法声明 
     method_declaration: $ => seq(
       repeat($.decorator),
@@ -750,6 +784,7 @@ module.exports = grammar({
     statement: $ => choice(
       $.expression_statement,
       $.if_statement,
+      $.switch_statement,
       $.variable_declaration,
       $.return_statement,
       $.try_statement,  // try/catch/finally 语句
