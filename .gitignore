@@ -61,3 +61,6 @@ reports/history/
 
 # IDE artifacts
 .qoder/
+
+# CodeGraph index
+.codegraph/
