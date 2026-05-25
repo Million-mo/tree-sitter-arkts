@@ -64,3 +64,6 @@ reports/history/
 
 # CodeGraph index
 .codegraph/
+
+# OpenCode personal tooling
+.opencode/

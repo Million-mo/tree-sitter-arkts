@@ -47,6 +47,7 @@ json_files+=']'
 
 node -e "
 const fs = require('fs');
+const path = require('path');
 const { Parser: WTParser, Language } = require('web-tree-sitter');
 const files = ${json_files};
 
@@ -56,7 +57,12 @@ const files = ${json_files};
   const Lang = await Language.load('tree-sitter-arkts.wasm');
   parser.setLanguage(Lang);
 
-  let passed = 0, failed = 0, details = [];
+  // 文件名中含 error_recovery 的文件用于测试错误恢复，解析含 ERROR 节点是预期的
+  function isExpectedFailure(file) {
+    return path.basename(file).includes('error_recovery');
+  }
+
+  let passed = 0, failed = 0, expected = 0, details = [];
 
   for (const file of files) {
     const src = fs.readFileSync(file, 'utf8');
@@ -71,7 +77,6 @@ const files = ${json_files};
     check(root);
 
     if (hasError) {
-      failed++;
       const errs = [];
       function collect(n) {
         if (n.type === 'ERROR' || n.isError) errs.push(
@@ -80,7 +85,14 @@ const files = ${json_files};
         for (let i = 0; i < n.childCount; i++) collect(n.child(i));
       }
       collect(root);
-      details.push({ file, ok: false, errors: errs });
+
+      if (isExpectedFailure(file)) {
+        expected++;
+        details.push({ file, ok: false, expected: true, errors: errs });
+      } else {
+        failed++;
+        details.push({ file, ok: false, expected: false, errors: errs });
+      }
     } else {
       passed++;
       details.push({ file, ok: true });
@@ -92,6 +104,9 @@ const files = ${json_files};
     const rel = d.file.replace(process.cwd() + '/', '');
     if (d.ok) {
       console.log('PASS: ' + rel);
+    } else if (d.expected) {
+      console.log('XPCT: ' + rel + ' (expected error recovery test)');
+      for (const e of d.errors) console.log('  ERROR at ' + e);
     } else {
       console.log('FAIL: ' + rel);
       for (const e of d.errors) console.log('  ERROR at ' + e);
@@ -102,8 +117,10 @@ const files = ${json_files};
   console.log('=== 测试总结 ===');
   console.log('总文件数: ' + files.length);
   console.log('成功: ' + passed);
-  console.log('失败: ' + failed);
-  console.log('成功率: ' + (files.length > 0 ? Math.round(passed / files.length * 100) : 0) + '%');
+  console.log('预期失败(error_recovery): ' + expected);
+  console.log('意外失败: ' + failed);
+  const effectiveTotal = files.length - expected;
+  console.log('有效率: ' + (effectiveTotal > 0 ? Math.round(passed / effectiveTotal * 100) : 0) + '%（扣除预期失败）');
   console.log('结束时间: ' + new Date().toLocaleString());
 })();
 " 2>&1

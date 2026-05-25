@@ -578,11 +578,13 @@ module.exports = grammar({
       'undefined',
       'true',
       'false',
+      $.string_literal,     // 字符串字面量类型，如 'light' | 'dark'
+      $.numeric_literal,    // 数字字面量类型，如 1 | 2 | 3
       $.array_type,
-      $.tuple_type,      // 元组类型，如 [string, number]
-      $.generic_type,    // 泛型类型，如 Promise<void>、Array<string>
-      $.qualified_type,  // 限定类型名，如 window.WindowStage
-      $.parenthesized_type,  // 括号类型，如 ((param: string) => void)
+      $.tuple_type,         // 元组类型，如 [string, number]
+      $.generic_type,       // 泛型类型，如 Promise<void>、Array<string>
+      $.qualified_type,     // 限定类型名，如 window.WindowStage
+      $.parenthesized_type, // 括号类型，如 ((param: string) => void)
       $.identifier
     ),
 

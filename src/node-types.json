@@ -1224,11 +1224,19 @@
           "named": true
         },
         {
+          "type": "numeric_literal",
+          "named": true
+        },
+        {
           "type": "parenthesized_type",
           "named": true
         },
         {
           "type": "qualified_type",
+          "named": true
+        },
+        {
+          "type": "string_literal",
           "named": true
         },
         {
