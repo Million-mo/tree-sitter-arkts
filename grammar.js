@@ -578,11 +578,13 @@ module.exports = grammar({
       'undefined',
       'true',
       'false',
+      $.string_literal,     // 字符串字面量类型，如 'light' | 'dark'
+      $.numeric_literal,    // 数字字面量类型，如 1 | 2 | 3
       $.array_type,
-      $.tuple_type,      // 元组类型，如 [string, number]
-      $.generic_type,    // 泛型类型，如 Promise<void>、Array<string>
-      $.qualified_type,  // 限定类型名，如 window.WindowStage
-      $.parenthesized_type,  // 括号类型，如 ((param: string) => void)
+      $.tuple_type,         // 元组类型，如 [string, number]
+      $.generic_type,       // 泛型类型，如 Promise<void>、Array<string>
+      $.qualified_type,     // 限定类型名，如 window.WindowStage
+      $.parenthesized_type, // 括号类型，如 ((param: string) => void)
       $.identifier
     ),
 
@@ -708,6 +710,40 @@ module.exports = grammar({
       ))
     ),
 
+    // switch语句类型
+
+    switch_statement: $ => seq(
+      'switch',
+      '(',
+      $.expression,
+      ')',
+      '{',
+      repeat(choice(
+        $.switch_case,
+        $.switch_default
+      )),
+      '}'
+    ),
+
+    switch_case: $ => seq(
+      'case',
+      field('value', $.expression),
+      ':',
+      repeat(field('consequent', choice(
+        $.statement,
+        $.block_statement
+      )))
+    ),
+
+    switch_default: $ => seq(
+      'default',
+      ':',
+      repeat(field('consequent', choice(
+        $.statement,
+        $.block_statement
+      )))
+    ),
+
     // 方法声明 
     method_declaration: $ => seq(
       repeat($.decorator),
@@ -750,6 +786,7 @@ module.exports = grammar({
     statement: $ => choice(
       $.expression_statement,
       $.if_statement,
+      $.switch_statement,
       $.variable_declaration,
       $.return_statement,
       $.try_statement,  // try/catch/finally 语句

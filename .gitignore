@@ -61,3 +61,9 @@ reports/history/
 
 # IDE artifacts
 .qoder/
+
+# CodeGraph index
+.codegraph/
+
+# OpenCode personal tooling
+.opencode/
